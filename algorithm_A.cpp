@@ -37,10 +37,6 @@ const int neighbor[30][4] = {{1, 6, -1, -1}, {0, 2, 7, -1}, {1, 3, 8, -1},
 bool first_round = true; 
 int evaluation(Board &board, const char &mycolor, const char &opcolor)
 {
-    if (board.win_the_game(Player(mycolor)) && !first_round)
-        return 5000;
-    else if (board.win_the_game(Player(opcolor)) && !first_round)
-        return -5000;
     int final_score = 0;
     int i, j, k; // loop index
     bool critical_enemy;
@@ -60,6 +56,8 @@ int evaluation(Board &board, const char &mycolor, const char &opcolor)
             // rule 4
             if (board.get_cell_color(i, j) == mycolor)
                 final_score += board.get_orbs_num(i, j);
+            else if (board.get_cell_color(i, j) == opcolor)
+                final_score -= board.get_orbs_num(i, j);
             // rule 1
             for (k = 0, critical_enemy = false; k < 4; k++) {
                 int neighbor_pos = neighbor[i * 6 + j][k];
@@ -98,7 +96,7 @@ int evaluation(Board &board, const char &mycolor, const char &opcolor)
 }
 int minimax(Board &board, int depth, int alpha, int beta, bool maximizingPlayer, const char &mycolor, const char &opcolor) 
 {
-    if (depth == 0 ) 
+    if (depth == 0) 
         return evaluation(board, mycolor, opcolor);
     else if (board.win_the_game(Player(mycolor))) {
         if (depth == DEPTH)
@@ -107,8 +105,11 @@ int minimax(Board &board, int depth, int alpha, int beta, bool maximizingPlayer,
             return 5000;
     }
     else if (board.win_the_game(Player(opcolor)))
-        return -5001;
-    
+        if (depth == DEPTH - 1)
+            return -5001;
+        else
+            return -5000;
+
     if (maximizingPlayer) {
         int maxEval = MIN;
         for (int i = 0; i < 30; i++) {
@@ -181,13 +182,13 @@ void algorithm_A(Board board, Player player, int index[])
     int evalutaion_result[5][6];
     static int round = -1;
     int current_depth;
-    round += 2;
-
+    round += 1;
+    /*
     if (round <= 30)
         current_depth = 3;
     else
         current_depth = DEPTH;
-
+    */
     if (mycolor == 'r')
         opcolor = 'b';
     else
@@ -196,14 +197,14 @@ void algorithm_A(Board board, Player player, int index[])
 
     for (int i = 0; i < 5; i++) {
         for (int j = 0; j < 6; j++) {
-            //evalutaion_result[i][j] = -8787; 
+            evalutaion_result[i][j] = -8787; 
             Board myboard(board);
             // so we will absolutely not place orb on the enemy's place!!
             if (board.get_cell_color(i, j) != opcolor) {
                 myboard.place_orb(i, j, &player);
-                current_score = minimax(myboard, current_depth, MIN, MAX, true, mycolor, opcolor);
-                //evalutaion_result[i][j] = current_score;
-                if (current_score >= best_score) {
+                current_score = minimax(myboard, DEPTH, MIN, MAX, false, mycolor, opcolor);
+                evalutaion_result[i][j] = current_score;
+                if (current_score > best_score) {
                     best_score = current_score;
                     index[0] = i, index[1] = j;
                 }          
@@ -217,6 +218,7 @@ void algorithm_A(Board board, Player player, int index[])
             cout << evalutaion_result[i][j] << ' ';
         cout << endl;
     }
+    cout << "my color is " << (mycolor == 'r'? 'O' : 'X') << endl;
     */
-    
+    //cout << "depth is " << current_depth << endl;
 }
