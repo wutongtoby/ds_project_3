@@ -1,12 +1,14 @@
 #include <iostream>
 #include <cstdlib>
 #include <limits>
+#include <queue>
+#include <ctime>
 #include "pair.h"
 #include "../include/algorithm.h"
 #include "../include/board.h"
 #include "../include/player.h"
 
-#define DEPTH 4
+#define DEPTH 3
 
 using namespace std;
 
@@ -204,14 +206,26 @@ void algorithm_A(Board board, Player player, int index[])
                 myboard.place_orb(i, j, &player);
                 current_score = minimax(myboard, DEPTH, MIN, MAX, false, mycolor, opcolor);
                 evalutaion_result[i][j] = current_score;
-                if (current_score > best_score) {
+                if (current_score >= best_score) {
                     best_score = current_score;
-                    index[0] = i, index[1] = j;
+                    //index[0] = i, index[1] = j;
                 }          
             }  
         }
     }
     first_round = false;
+    queue<PAIR> q;
+    srand(time(NULL)*time(NULL));
+    
+    for (int i = 0; i < 5; i++) 
+        for (int j = 0; j < 6; j++)
+            if (evalutaion_result[i][j] == best_score)
+                q.push(PAIR(i, j));
+    int temp = rand() % q.size();
+    for (int i = 0; i < temp && q.size() != 1; i++)
+        q.pop();
+    index[0] = q.front().row;
+    index[1] = q.front().col; 
     /*
     for (int i = 0; i < 5; i++) {
         for (int j = 0; j < 6; j++)
