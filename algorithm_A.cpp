@@ -1,12 +1,12 @@
 #include <iostream>
-#include <stdlib.h>
+#include <cstdlib>
 #include <limits>
 #include "pair.h"
 #include "../include/algorithm.h"
 #include "../include/board.h"
 #include "../include/player.h"
 
-#define DEPTH 1
+#define DEPTH 4
 
 using namespace std;
 
@@ -45,8 +45,8 @@ int evaluation(Board &board, const char &mycolor, const char &opcolor)
     int i, j, k; // loop index
     bool critical_enemy;
 
-/* 1. For every orb, for every enemy critical cell surrounding the orb, subtract 5 times 
- *    the critical mass of that cell from the value 
+/* 1. For every orb, for every enemy critical cell surrounding the orb, subtract (5 subtract
+ *    the critical mass of that cell) from the value 
  * 2. In case that the orb has no critical enemy cells in its adjacent cells at all, 
  *    add 2 to the value if it is an edge cell or 3 if its is a corner cell
  * 3. In case that the orb has no critical enemy cells in its adjacent cells at all,
@@ -57,25 +57,30 @@ int evaluation(Board &board, const char &mycolor, const char &opcolor)
  */
     for (i = 0; i < 5; i++) {
         for (j = 0; j < 6; j++) {
-            if (board.get_cell_color(i, j) != mycolor)
-                continue;
-            final_score++;
+            // rule 4
+            if (board.get_cell_color(i, j) == mycolor)
+                final_score += board.get_orbs_num(i, j);
+            // rule 1
             for (k = 0, critical_enemy = false; k < 4; k++) {
                 int neighbor_pos = neighbor[i * 6 + j][k];
                 if (neighbor_pos != -1) {
+                    // if surrounding cell is critical enemy
                     if (board.get_orbs_num(neighbor_pos / 6, neighbor_pos % 6) == 
                         critical_mass[neighbor_pos / 6][neighbor_pos % 6] - 1 && 
                         board.get_cell_color(neighbor_pos / 6, neighbor_pos % 6) == opcolor) {
-                        final_score -= 5 * critical_mass[i][j];
+                        final_score -= (5 - critical_mass[i][j]) * board.get_orbs_num(i, j);
                         critical_enemy = true;
                     }
                 }
             }
-            if (!critical_enemy) {
-                final_score +=  critical_mass[i][j] == 4 ? 0 : critical_mass[i][j];
-                if (board.get_orbs_num(i, j) - 1 == critical_mass[i][j])
-                    final_score += 2;
+            if (!critical_enemy && board.get_cell_color(i, j) != opcolor) {
+                // rule 2
+                final_score +=  (critical_mass[i][j] == 4 ? 0 : critical_mass[i][j]) * board.get_orbs_num(i, j);
+                // rule 3
+                if (board.get_orbs_num(i, j) + 1 == critical_mass[i][j])
+                    final_score += 2 * critical_mass[i][j] - 1;
             }
+            /*
             for (k = 0; k < 4; k++) {
                 int neighbor_pos = neighbor[i * 6 + j][k];
                 if (neighbor_pos != -1) {
@@ -86,6 +91,7 @@ int evaluation(Board &board, const char &mycolor, const char &opcolor)
                         final_score += (critical_mass[i][j] - 1) * 2;
                 }
             }
+            */
         }
    }
    return final_score;
@@ -175,7 +181,7 @@ void algorithm_A(Board board, Player player, int index[])
     int evalutaion_result[5][6];
     static int round = -1;
     int current_depth;
-    round++;
+    round += 2;
 
     if (round <= 30)
         current_depth = 3;
@@ -187,22 +193,24 @@ void algorithm_A(Board board, Player player, int index[])
     else
         opcolor = 'r';
 
+
     for (int i = 0; i < 5; i++) {
         for (int j = 0; j < 6; j++) {
-            evalutaion_result[i][j] = -8787;
+            //evalutaion_result[i][j] = -8787; 
             Board myboard(board);
+            // so we will absolutely not place orb on the enemy's place!!
             if (board.get_cell_color(i, j) != opcolor) {
                 myboard.place_orb(i, j, &player);
                 current_score = minimax(myboard, current_depth, MIN, MAX, true, mycolor, opcolor);
-                evalutaion_result[i][j] = current_score;
+                //evalutaion_result[i][j] = current_score;
                 if (current_score >= best_score) {
                     best_score = current_score;
                     index[0] = i, index[1] = j;
                 }          
-            }
-            first_round = false;
+            }  
         }
     }
+    first_round = false;
     /*
     for (int i = 0; i < 5; i++) {
         for (int j = 0; j < 6; j++)
