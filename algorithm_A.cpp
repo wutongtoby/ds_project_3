@@ -8,7 +8,7 @@
 #include "../include/board.h"
 #include "../include/player.h"
 
-#define DEPTH 3
+#define DEPTH 4
 
 using namespace std;
 
@@ -96,32 +96,54 @@ int evaluation(Board &board, const char &mycolor, const char &opcolor)
    }
    return final_score;
 }
-int minimax(Board &board, int depth, int alpha, int beta, bool maximizingPlayer, const char &mycolor, const char &opcolor) 
+int round = -1;
+int minimax(Board board, int depth, int alpha, int beta, bool maximizingPlayer, const char &mycolor, const char &opcolor, PAIR& colrow) 
 {
     if (depth == 0) 
         return evaluation(board, mycolor, opcolor);
-    else if (board.win_the_game(Player(mycolor))) {
-        if (depth == DEPTH)
+    else if (board.win_the_game(Player(mycolor)) && !first_round) {
+        if (depth == DEPTH - 1)
             return 5001;
         else
             return 5000;
     }
-    else if (board.win_the_game(Player(opcolor)))
-        if (depth == DEPTH - 1)
+    else if (board.win_the_game(Player(opcolor)) && !first_round) {
+        if (depth == DEPTH - 2)
             return -5001;
         else
             return -5000;
-
+    }
+    PAIR XD;
+    int i;
+    if (round == 51) {
+        for (int i = 0; i < 30; i++) {
+            if (i % 6 == 0 && i != 0)
+                cout << endl;
+            cout << board.get_cell_color(i / 6, i % 6) << ' ';
+        }
+        cout << "\n\n" << flush;
+    }
     if (maximizingPlayer) {
         int maxEval = MIN;
-        for (int i = 0; i < 30; i++) {
+        for (i = 0; i < 30; i++) {
             Board myboard(board);
             if (myboard.get_cell_color(i / 6, i % 6) == opcolor)
                 continue;
             Player p(mycolor);
             myboard.place_orb(i / 6, i % 6, &p);
-            int eval = minimax(myboard, depth - 1, alpha, beta, false, mycolor, opcolor);
-            maxEval = max(maxEval, eval);
+            int eval = minimax(myboard, depth - 1, alpha, beta, false, mycolor, opcolor, XD);
+            /*            
+            if (round == 51) {   
+                cout << i  << endl;
+                cout << board.get_cell_color(0, 0) << endl;
+                cout << eval << ' ' << endl;
+            }
+            */
+            if (maxEval < eval) {
+                maxEval = eval;
+                colrow.row = i / 6;
+                colrow.col = i % 6;
+            }  
             alpha = max(alpha, eval);
             if (beta <= alpha)
                 break;
@@ -130,13 +152,13 @@ int minimax(Board &board, int depth, int alpha, int beta, bool maximizingPlayer,
     }
     else {
         int minEval = MAX;
-        for (int i = 0; i < 30; i++) {
+        for (i = 0; i < 30; i++) {
             Board myboard(board);
             if (myboard.get_cell_color(i / 6, i % 6) == mycolor)
                 continue;
             Player p(opcolor);
             myboard.place_orb(i / 6, i % 6, &p);
-            int eval = minimax(myboard, depth - 1, alpha, beta, true, mycolor, opcolor);
+            int eval = minimax(myboard, depth - 1, alpha, beta, true, mycolor, opcolor, XD);
             minEval = min(minEval, eval);
             beta = min(beta, eval);
             if (beta <= alpha)
@@ -182,9 +204,9 @@ void algorithm_A(Board board, Player player, int index[])
     int best_score = MIN;
     int current_score;
     int evalutaion_result[5][6];
-    static int round = -1;
+    //static int round = 0;
     int current_depth;
-    round += 1;
+    round += 2;
     /*
     if (round <= 30)
         current_depth = 3;
@@ -195,8 +217,21 @@ void algorithm_A(Board board, Player player, int index[])
         opcolor = 'b';
     else
         opcolor = 'r';
-
-
+    /*
+    if (round == 51) {
+        for (int i = 0; i < 30; i++) {
+            if (i % 6 == 0 && i != 0)
+                cout << endl;
+            cout << board.get_cell_color(i / 6, i % 6) << ' ';
+        }
+    }
+    */
+    
+    PAIR p;
+    minimax(board, DEPTH, MIN, MAX, true, mycolor, opcolor, p);
+    index[0] = p.row;
+    index[1] = p.col;
+    /*
     for (int i = 0; i < 5; i++) {
         for (int j = 0; j < 6; j++) {
             evalutaion_result[i][j] = -8787; 
@@ -235,4 +270,5 @@ void algorithm_A(Board board, Player player, int index[])
     cout << "my color is " << (mycolor == 'r'? 'O' : 'X') << endl;
     */
     //cout << "depth is " << current_depth << endl;
+    
 }
